@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo bán hàng Nam Phong Thu Cũ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-brand-600 rounded-xl text-white shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Báo cáo bán hàng Nam Phong Thu Cũ</h1>
+                    <p class="text-xs text-slate-400">Báo cáo kinh doanh, tài sản &amp; thu hồi vốn</p>
+                </div>
+            </div>
+
+            <!-- Excel File Upload Button -->
+            <div class="flex items-center gap-3">
+                <label for="excelFileInput" class="cursor-pointer inline-flex items-center px-4 py-2.5 border border-slate-700 hover:border-emerald-500 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl text-sm font-medium transition-all shadow-sm group">
+                    <i class="fa-solid fa-file-excel text-emerald-400 text-lg mr-2.5 group-hover:scale-110 transition-transform"></i>
+                    <span id="uploadLabel">Upload File Excel (.xlsx)</span>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden">
+                </label>
+                <button onclick="resetToDefaultData()" title="Khôi phục dữ liệu mặc định" class="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl hover:text-white transition-colors">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Top Section: KPI Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- KPI 1: Doanh Thu -->
+            <div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng Doanh Thu</span>
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <i class="fa-solid fa-sack-dollar text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h2 id="kpiRevenue" class="text-2xl font-extrabold text-slate-900">0 VNĐ</h2>
+                    <p class="mt-1 text-xs text-slate-500">Doanh thu ghi nhận thực tế</p>
+                </div>
+            </div>
+
+            <!-- KPI 2: Số Lượng Bán -->
+            <div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Số Lượng Bán Ra</span>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i class="fa-solid fa-boxes-packing text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h2 id="kpiSalesQty" class="text-2xl font-extrabold text-slate-900">0 sản phẩm</h2>
+                    <p class="mt-1 text-xs text-slate-500">Tỷ lệ tiêu thụ: <span id="kpiSellThroughRate" class="font-semibold text-indigo-600">0%</span></p>
+                </div>
+            </div>
+
+            <!-- KPI 3: Lợi Nhuận & Tối Ưu -->
+            <div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">LN BH &amp; Giá Trị Tối Ưu</span>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h2 id="kpiProfitAndOptimization" class="text-2xl font-extrabold text-slate-900">0 VNĐ</h2>
+                    <p class="mt-1 text-xs text-slate-500">Gồm LN bán hàng &amp; Hiệu chỉnh tối ưu</p>
+                </div>
+            </div>
+
+            <!-- KPI 4: Tồn Kho Hiện Tại -->
+            <div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tồn Kho Hiện Tại</span>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <i class="fa-solid fa-warehouse text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h2 id="kpiCurrentStock" class="text-2xl font-extrabold text-slate-900">2.009 sản phẩm</h2>
+                    <p class="mt-1 text-xs text-slate-500">Tồn kho thực tế kỳ mới nhất</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Middle Section: Visual Charts Grid -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- 2.1 Combo Chart: Xu hướng Doanh thu & Tỷ lệ Bán (Col Spans 2) -->
+            <div class="glass-card rounded-2xl p-6 shadow-sm lg:col-span-2 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Xu Hướng Doanh Thu &amp; Tỷ Lệ Bán Ra Theo Tháng</h3>
+                        <p class="text-xs text-slate-500">So sánh doanh thu (cột) và tỷ lệ giải phóng kho (%) theo từng kỳ</p>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg">Tháng 01 - Tháng 10</span>
+                </div>
+                <div class="relative flex-1 min-h-[320px]">
+                    <canvas id="comboChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3.1 Donut Chart: Cơ cấu Doanh thu theo Nhóm Hàng (Col Span 1) -->
+            <div class="glass-card rounded-2xl p-6 shadow-sm flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Cơ Cấu Doanh Thu</h3>
+                        <p class="text-xs text-slate-500">Phân bổ doanh thu theo nhóm sản phẩm</p>
+                    </div>
+                    <i class="fa-solid fa-pie-chart text-slate-400"></i>
+                </div>
+                <div class="relative flex-1 min-h-[320px] flex items-center justify-center">
+                    <canvas id="donutChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 2.2 Horizontal Bar Chart: Top Sản phẩm Đóng góp Doanh thu (Full Width) -->
+            <div class="glass-card rounded-2xl p-6 shadow-sm lg:col-span-3 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Top Sản Phẩm Đóng Góp Doanh Thu Cao Nhất</h3>
+                        <p class="text-xs text-slate-500">Xếp hạng danh mục sản phẩm mang lại doanh số nhiều nhất</p>
+                    </div>
+                    <span class="text-xs text-slate-400"><i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Xếp hạng theo VNĐ</span>
+                </div>
+                <div class="relative min-h-[380px]">
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Báo cáo bán hàng Nam Phong Thu Cũ © 2026 - Tích hợp Chart.js &amp; SheetJS Engine
+        </div>
+    </footer>
+
+    <script>
+        // Default Dataset integrated directly from Book2.xlsx
+        const defaultRawData = [
+            { stt: 1, name: "Demo Find N3 16GB+512GB Gold", totalQty: 100, salesQty: 100, month: "Tháng 01/2026", cost: 0, revenue: 1200000000, profit: 0, optimize: 0, stock: 0 },
+            { stt: 2, name: "Demo Reno12 series", totalQty: 800, salesQty: 800, month: "Tháng 01/2026", cost: 0, revenue: 2400000000, profit: 0, optimize: 0, stock: 0 },
+            { stt: 3, name: "Demo Reno13 series", totalQty: 4333, salesQty: 3000, month: "Tháng 01/2026", cost: 0, revenue: 15000000000, profit: 0, optimize: 4500000000, stock: 1333 },
+            { stt: 4, name: "Máy cũ-tồn kho 01", totalQty: 250, salesQty: 200, month: "Tháng 01/2026", cost: 1200000000, revenue: 1600000000, profit: 400000000, optimize: 0, stock: 50 },
+            
+            { stt: 5, name: "Demo Reno13 series", totalQty: 1333, salesQty: 1000, month: "Tháng 02/2026", cost: 0, revenue: 6112000000, profit: 0, optimize: 622323315, stock: 333 },
+            { stt: 6, name: "IoT thanh lý 01", totalQty: 500, salesQty: 500, month: "Tháng 02/2026", cost: 0, revenue: 250000000, profit: 25000000, optimize: 0, stock: 0 },
+            
+            { stt: 7, name: "Demo Reno13 series", totalQty: 333, salesQty: 333, month: "Tháng 03/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 0 },
+            { stt: 8, name: "Demo Reno12 series", totalQty: 150, salesQty: 100, month: "Tháng 03/2026", cost: 0, revenue: 350000000, profit: 0, optimize: -20000000, stock: 50 },
+            { stt: 9, name: "Máy không chứng từ 02", totalQty: 80, salesQty: 80, month: "Tháng 03/2026", cost: 300000000, revenue: 450000000, profit: 150000000, optimize: 0, stock: 0 },
+
+            { stt: 10, name: "Demo Reno12 series", totalQty: 50, salesQty: 50, month: "Tháng 04/2026", cost: 0, revenue: 170000000, profit: 0, optimize: -35919082, stock: 0 },
+            { stt: 11, name: "Máy xác không chứng từ 01", totalQty: 120, salesQty: 120, month: "Tháng 04/2026", cost: 50000000, revenue: 120000000, profit: 70000000, optimize: 0, stock: 0 },
+
+            { stt: 12, name: "Demo Reno14 series", totalQty: 5000, salesQty: 1200, month: "Tháng 05/2026", cost: 0, revenue: 8400000000, profit: 0, optimize: 0, stock: 3800 },
+            { stt: 13, name: "Demo Reno12 series", totalQty: 200, salesQty: 200, month: "Tháng 05/2026", cost: 0, revenue: 0, profit: 0, optimize: -85937129, stock: 0 },
+
+            { stt: 14, name: "Demo Reno14 series", totalQty: 3800, salesQty: 1800, month: "Tháng 06/2026", cost: 0, revenue: 12600000000, profit: 0, optimize: 0, stock: 2000 },
+            { stt: 15, name: "Máy cũ-tồn kho 02", totalQty: 300, salesQty: 300, month: "Tháng 06/2026", cost: 1800000000, revenue: 2200000000, profit: 400000000, optimize: 0, stock: 0 },
+
+            { stt: 16, name: "Demo Reno14 series", totalQty: 2000, salesQty: 1000, month: "Tháng 07/2026", cost: 0, revenue: 7000000000, profit: 0, optimize: 0, stock: 1000 },
+            
+            { stt: 17, name: "Demo Reno14 series", totalQty: 1000, salesQty: 1000, month: "Tháng 08/2026", cost: 0, revenue: 8480000000, profit: 0, optimize: 414000000, stock: 0 },
+            { stt: 18, name: "Máy cũ-tồn kho 03", totalQty: 800, salesQty: 800, month: "Tháng 08/2026", cost: 5931310000, revenue: 6381000000, profit: 449690000, optimize: 0, stock: 0 },
+
+            { stt: 19, name: "Demo Find X8 5G 16GB+512GB", totalQty: 300, salesQty: 300, month: "Tháng 09/2026", cost: 0, revenue: 1800000000, profit: 0, optimize: 650000000, stock: 0 },
+            { stt: 20, name: "IoT thanh lý 02", totalQty: 1000, salesQty: 178, month: "Tháng 09/2026", cost: 0, revenue: 89000000, profit: 8900000, optimize: 0, stock: 822 },
+
+            // Month 10 Stocked Items
+            { stt: 21, name: "Demo Find X9 12GB+256GB", totalQty: 492, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 492 },
+            { stt: 22, name: "Demo Find X9 Pro 16GB+512GB", totalQty: 100, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 100 },
+            { stt: 23, name: "Demo Find N5 16GB+512GB", totalQty: 51, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 51 },
+            { stt: 24, name: "Demo A6 Pro 5G 8GB+256GB", totalQty: 41, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 41 },
+            { stt: 25, name: "Máy cũ-tồn kho 04", totalQty: 500, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 500 },
+            { stt: 26, name: "IoT tồn-hư hỏng 02", totalQty: 822, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 822 },
+            { stt: 27, name: "Máy xác không chứng từ 01", totalQty: 3, salesQty: 0, month: "Tháng 10/2026", cost: 0, revenue: 0, profit: 0, optimize: 0, stock: 3 }
+        ];
+
+        // Global Chart instances
+        let comboChartInstance = null;
+        let donutChartInstance = null;
+        let topProductsChartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderDashboard(defaultRawData);
+
+            // File Upload Listener
+            document.getElementById('excelFileInput').addEventListener('change', handleFileUpload);
+        });
+
+        // Format Currency VNĐ
+        function formatVND(amount) {
+            if (isNaN(amount)) return '0 VNĐ';
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        // Format Number with Thousands Separator
+        function formatNum(num) {
+            if (isNaN(num)) return '0';
+            return new Intl.NumberFormat('vi-VN').format(Math.round(num));
+        }
+
+        // Categorize Product Name into Groups
+        function getGroupCategory(productName) {
+            const name = (productName || "").toLowerCase();
+            if (name.includes('demo') || name.includes('find') || name.includes('reno') || name.includes('a6')) {
+                return 'Hàng Demo';
+            } else if (name.includes('máy cũ') || name.includes('tồn kho')) {
+                return 'Hàng Máy Cũ / Tồn Kho';
+            } else if (name.includes('thanh lý') || name.includes('xác') || name.includes('iot') || name.includes('không chứng từ')) {
+                return 'Hàng Thanh Lý / Xác / IoT';
+            }
+            return 'Khác';
+        }
+
+        function renderDashboard(data) {
+            let totalRevenue = 0;
+            let totalSalesQty = 0;
+            let totalInitialQty = 0;
+            let totalProfitAndOptimize = 0;
+
+            data.forEach(item => {
+                totalRevenue += (item.revenue || 0);
+                totalSalesQty += (item.salesQty || 0);
+                totalProfitAndOptimize += ((item.profit || 0) + (item.optimize || 0));
+                totalInitialQty += (item.totalQty || 0);
+            });
+
+            // Smart Stock Calculation: Deduplicate stock by taking the latest reported period for each product
+            const latestStockByProduct = {};
+            data.forEach(item => {
+                if (item.name) {
+                    // Update latest stock entry encountered for each product
+                    latestStockByProduct[item.name] = item.stock || 0;
+                }
+            });
+
+            let currentStockSum = 0;
+            Object.values(latestStockByProduct).forEach(stockVal => {
+                currentStockSum += stockVal;
+            });
+
+            const sellThroughRate = totalInitialQty > 0 ? ((totalSalesQty / totalInitialQty) * 100).toFixed(1) : 0;
+
+            // Update KPI Cards UI
+            document.getElementById('kpiRevenue').textContent = formatVND(totalRevenue);
+            document.getElementById('kpiSalesQty').textContent = `${formatNum(totalSalesQty)} sản phẩm`;
+            document.getElementById('kpiSellThroughRate').textContent = `${sellThroughRate}%`;
+            document.getElementById('kpiProfitAndOptimization').textContent = formatVND(totalProfitAndOptimize);
+            document.getElementById('kpiCurrentStock').textContent = `${formatNum(currentStockSum)} sản phẩm`;
+
+            // Build Charts
+            renderComboChart(data);
+            renderDonutChart(data);
+            renderTopProductsChart(data);
+        }
+
+        function renderComboChart(data) {
+            const monthMap = {};
+            
+            data.forEach(item => {
+                const month = item.month || "Chưa phân loại";
+                if (!monthMap[month]) {
+                    monthMap[month] = { revenue: 0, salesQty: 0, totalQty: 0 };
+                }
+                monthMap[month].revenue += (item.revenue || 0);
+                monthMap[month].salesQty += (item.salesQty || 0);
+                monthMap[month].totalQty += (item.totalQty || 0);
+            });
+
+            const labels = Object.keys(monthMap);
+            const revenues = labels.map(m => monthMap[m].revenue);
+            const sellRates = labels.map(m => {
+                const tot = monthMap[m].totalQty;
+                return tot > 0 ? ((monthMap[m].salesQty / tot) * 100).toFixed(1) : 0;
+            });
+
+            const ctx = document.getElementById('comboChart').getContext('2d');
+            if (comboChartInstance) comboChartInstance.destroy();
+
+            comboChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Tỷ Lệ Bán Ra / SL Tổng (%)',
+                            data: sellRates,
+                            borderColor: '#0284c7',
+                            backgroundColor: '#0284c7',
+                            borderWidth: 3,
+                            fill: false,
+                            yAxisID: 'yRate',
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Doanh Thu (VNĐ)',
+                            data: revenues,
+                            backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                            hoverBackgroundColor: 'rgba(79, 70, 229, 1)',
+                            borderRadius: 6,
+                            yAxisID: 'yRevenue'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.yAxisID === 'yRevenue') {
+                                        return `Doanh thu: ${formatVND(context.raw)}`;
+                                    }
+                                    return `Tỷ lệ bán: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        yRevenue: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Doanh Thu (VNĐ)', font: { size: 11 } },
+                            ticks: {
+                                callback: function(val) {
+                                    return (val / 1e9).toFixed(1) + ' Tỷ';
+                                }
+                            },
+                            grid: { color: 'rgba(241, 245, 249, 1)' }
+                        },
+                        yRate: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Tỷ Lệ Bán (%)', font: { size: 11 } },
+                            min: 0,
+                            max: 100,
+                            grid: { drawOnChartArea: false },
+                            ticks: { callback: val => val + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderDonutChart(data) {
+            const categoryMap = {
+                'Hàng Demo': 0,
+                'Hàng Máy Cũ / Tồn Kho': 0,
+                'Hàng Thanh Lý / Xác / IoT': 0
+            };
+
+            data.forEach(item => {
+                const group = getGroupCategory(item.name);
+                if (categoryMap[group] !== undefined) {
+                    categoryMap[group] += (item.revenue || 0);
+                } else {
+                    categoryMap['Hàng Thanh Lý / Xác / IoT'] += (item.revenue || 0);
+                }
+            });
+
+            const labels = Object.keys(categoryMap);
+            const values = Object.values(categoryMap);
+
+            const ctx = document.getElementById('donutChart').getContext('2d');
+            if (donutChartInstance) donutChartInstance.destroy();
+
+            donutChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#3b82f6', // Demo - Blue
+                            '#10b981', // Máy cũ - Emerald
+                            '#f59e0b'  // Thanh lý/IoT - Amber
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { family: 'Inter', size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${formatVND(context.raw)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '68%'
+                }
+            });
+        }
+
+        function renderTopProductsChart(data) {
+            const productMap = {};
+
+            data.forEach(item => {
+                const name = item.name || "Khác";
+                if (!productMap[name]) {
+                    productMap[name] = 0;
+                }
+                productMap[name] += (item.revenue || 0);
+            });
+
+            const sortedProducts = Object.keys(productMap)
+                .map(name => ({ name, revenue: productMap[name] }))
+                .filter(p => p.revenue > 0)
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10);
+
+            const labels = sortedProducts.map(p => p.name);
+            const revenues = sortedProducts.map(p => p.revenue);
+
+            const ctx = document.getElementById('topProductsChart').getContext('2d');
+            if (topProductsChartInstance) topProductsChartInstance.destroy();
+
+            topProductsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh Thu (VNĐ)',
+                        data: revenues,
+                        backgroundColor: 'rgba(14, 165, 233, 0.85)',
+                        hoverBackgroundColor: 'rgba(2, 132, 199, 1)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `Doanh thu: ${formatVND(context.raw)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: val => (val / 1e9).toFixed(1) + ' Tỷ'
+                            },
+                            grid: { color: 'rgba(241, 245, 249, 1)' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('uploadLabel').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    let sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes('tk bán hàng')) || workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    const parsedData = parseExcelRows(jsonData);
+                    if (parsedData.length > 0) {
+                        renderDashboard(parsedData);
+                    } else {
+                        alert("Không tìm thấy dữ liệu hợp lệ trong file Excel!");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Có lỗi xảy ra khi đọc file Excel. Vui lòng kiểm tra định dạng file!");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseExcelRows(rows) {
+            const parsed = [];
+            let headerIdx = -1;
+            for (let i = 0; i < rows.length; i++) {
+                const rowStr = rows[i].join(" ").toLowerCase();
+                if (rowStr.includes("mã sản phẩm") || rowStr.includes("doanh thu") || rowStr.includes("sl tổng")) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+
+            if (headerIdx === -1) headerIdx = 0;
+
+            for (let i = headerIdx + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                const name = row[1] || row[0];
+                if (!name || String(name).trim().toLowerCase().includes("tổng")) continue;
+
+                parsed.push({
+                    stt: row[0] || i,
+                    name: String(name).trim(),
+                    totalQty: parseFloat(row[2]) || 0,
+                    salesQty: parseFloat(row[3]) || 0,
+                    month: row[4] ? String(row[4]).trim() : "Chưa xác định",
+                    cost: parseFloat(row[5]) || 0,
+                    revenue: parseFloat(row[6]) || 0,
+                    profit: parseFloat(row[7]) || 0,
+                    optimize: parseFloat(row[8]) || 0,
+                    stock: parseFloat(row[9]) || 0
+                });
+            }
+            return parsed;
+        }
+
+        function resetToDefaultData() {
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('uploadLabel').textContent = 'Upload File Excel (.xlsx)';
+            renderDashboard(defaultRawData);
+        }
+    </script>
+</body>
+</html>
